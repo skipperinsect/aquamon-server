@@ -1,35 +1,35 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Devices extends Model {
+  class Feedings extends Model {
     static associate(models) {
-      Devices.hasMany(models.LogDatas, {
-        foreignKey: "code",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-      });
-      Devices.hasMany(models.Feedings, {
+      Feedings.belongsTo(models.Devices, {
         foreignKey: "code",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
       });
     }
   }
-  Devices.init(
+  Feedings.init(
     {
-      code: {
-        primaryKey: true,
+      id: {
         allowNull: false,
+        primaryKey: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+      },
+      code: {
         type: DataTypes.STRING,
       },
-      name: {
-        type: DataTypes.STRING,
+      servo: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
       },
     },
     {
       sequelize,
-      modelName: "Devices",
+      modelName: "Feedings",
     }
   );
-  return Devices;
+  return Feedings;
 };

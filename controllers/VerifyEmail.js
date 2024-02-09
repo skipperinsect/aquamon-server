@@ -1,8 +1,7 @@
 const { Users } = require("../models");
 const jwt = require("jsonwebtoken");
 const mail = require("../config/mail");
-const fs = require("fs").promises;
-const path = require("path");
+const hbs = require("nodemailer-express-handlebars");
 require("dotenv").config();
 
 const VerifToken = async (req, res) => {
@@ -50,26 +49,28 @@ const EmailToken = (email) => {
 };
 
 const VerifyEmail = async (email, token) => {
-  const normalizedDirname = __dirname.replace(/\\/g, "/");
-  const htmlTemplatePath = path.join(
-    normalizedDirname,
-    "..",
-    "public",
-    "email",
-    "verifyEmail.html"
+  mail.use(
+    "compile",
+    hbs({
+      viewEngine: {
+        extName: ".hbs",
+        partialsDir: "src/templates/email",
+        layoutsDir: "src/templates/email",
+        defaultLayout: "email-verification.hbs",
+      },
+      viewPath: "src/templates/email",
+      extName: ".hbs",
+    })
   );
-  const htmlTemplate = await fs.readFile(htmlTemplatePath, "utf-8");
-
-  const htmlContent = htmlTemplate
-    .replace("${email}", email)
-    .replace("${token}", token);
 
   let info = await mail.sendMail({
-    from: '"Hi Bro!" <yudhitia@yudhitiarizki.my.id>',
+    from: '"Email Verification" <no-reply@aquamon.my.id>',
     to: email,
-    subject: "Verif Account for Aquamon.",
-    text: "Please verify",
-    html: htmlContent,
+    subject: "Verify Account Aquamon",
+    template: "email-verification",
+    context: {
+      link: `${process.env.BASE_URL}#/verify/${token}`,
+    },
   });
 
   return info.messageId;

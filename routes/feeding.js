@@ -1,11 +1,11 @@
 const express = require("express");
 
 // Middleware
-const { createLogData } = require("../controllers/LogDatas");
+const { createFeedings } = require("../controllers/Feedings");
 
 const router = express.Router();
 //Routes
 
-router.post("/logdata", createLogData);
+router.post("/feeding", createFeedings);
 
 module.exports = router;
