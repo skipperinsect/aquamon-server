@@ -1,4 +1,4 @@
-const { Devices, LogDatas } = require("../models");
+const { Devices, LogDatas, LogErrors } = require("../models");
 
 const createLogData = async (req, res) => {
   try {
@@ -21,6 +21,9 @@ const createLogData = async (req, res) => {
     });
   } catch (error) {
     console.log(`${req.method} ${req.originalUrl} : ${error.message}`);
+    await LogErrors.create({
+      Log: `${req.method} ${req.originalUrl} : ${error.message}`,
+    });
     return res.status(400).json({
       message: "Failed to create log datas",
     });
