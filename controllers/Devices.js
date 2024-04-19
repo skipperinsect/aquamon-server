@@ -33,23 +33,15 @@ const getAllDevices = async (req, res) => {
 
 const checkStatus = async (code, startAt, endAt) => {
   try {
-    console.log(startAt);
     const feedingStatus = await Feedings.findOne({
       where: {
         code: code,
         createdAt: {
-          [Sequelize.Op.between]: [
-            startAt.toISOString().split(".")[0],
-            endAt.toISOString().split(".")[0],
-          ],
+          [Sequelize.Op.between]: [startAt, endAt],
         },
       },
     });
-
-    return {
-      status: !!feedingStatus,
-      feed: feedingStatus,
-    };
+    return !!feedingStatus;
   } catch (error) {
     console.error("Error while checking status:", error);
     throw new Error("Failed to check feeding status");
@@ -57,25 +49,23 @@ const checkStatus = async (code, startAt, endAt) => {
 };
 
 const calculateTimeRange = () => {
-  const nowISOString = new Date().toISOString();
-  const now = new Date(nowISOString);
-
+  const now = new Date();
   const startAt = new Date(now);
   const endAt = new Date(now);
 
-  if (now.getHours() >= 9 && now.getHours() < 13) {
-    startAt.setHours(9, 0, 0);
-    endAt.setHours(13, 0, 0);
-  } else if (now.getHours() >= 13 && now.getHours() < 17) {
-    startAt.setHours(13, 0, 0);
-    endAt.setHours(17, 0, 0);
+  if (now.getHours() >= 8 && now.getHours() < 12) {
+    startAt.setHours(8, 0, 0);
+    endAt.setHours(12, 0, 0);
+  } else if (now.getHours() >= 12 && now.getHours() < 16) {
+    startAt.setHours(12, 0, 0);
+    endAt.setHours(16, 0, 0);
   } else {
-    startAt.setHours(17, 0, 0);
-    endAt.setHours(9, 0, 0);
+    startAt.setHours(16, 0, 0);
+    endAt.setHours(8, 0, 0);
     endAt.setDate(endAt.getDate() + 1);
   }
 
-  return { startAt, endAt, now, hours: now.getHours() };
+  return { startAt, endAt };
 };
 
 const getAllStatusDevice = async (req, res) => {
@@ -123,36 +113,35 @@ const getAllStatusDevice = async (req, res) => {
 const getAllLogWithCode = async (req, res) => {
   try {
     const { code } = req.params;
+
     let { page = 1, pageSize = 10 } = req.query;
 
     page = parseInt(page);
     pageSize = parseInt(pageSize);
 
     const totalLogDataCount = await LogDatas.count({
-      where: { code: code }, // Update this line
+      where: { code },
     });
 
     const totalPages = Math.ceil(totalLogDataCount / pageSize);
 
-    const offset = (page - 1) * pageSize;
-
     const device = await Devices.findOne({
-      where: { code: code }, // Update this line
+      where: { code },
       include: [
         {
           model: LogDatas,
           order: [["createdAt", "DESC"]],
-          offset,
+          offset: (page - 1) * pageSize,
           limit: pageSize,
         },
       ],
     });
 
-    const { startAt, endAt, now, hours } = calculateTimeRange();
+    const { startAt, endAt } = calculateTimeRange();
     const feeding = await checkStatus(code, startAt, endAt);
 
     const status = await LogDatas.findOne({
-      where: { code: code },
+      where: { code },
       order: [["createdAt", "DESC"]],
     });
 
@@ -163,14 +152,7 @@ const getAllLogWithCode = async (req, res) => {
     }
 
     if (status) {
-      status.dataValues.feeding = feeding.status;
-      status.dataValues.feed = feeding.feed;
-      status.dataValues.date = {
-        startAt,
-        endAt,
-        now,
-        hours,
-      };
+      status.dataValues.feeding = feeding;
     }
 
     return res.status(200).json({
