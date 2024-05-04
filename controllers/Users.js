@@ -1,4 +1,6 @@
 const { Users } = require("../models");
+const { authorizationUrl, oauth2Client, google } = require("../config/google");
+
 const { VerifyEmail, EmailToken } = require("./VerifyEmail");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -113,8 +115,37 @@ const getUsers = async (req, res) => {
   }
 };
 
+const authGoogle = (req, res) => {
+  res.redirect(authorizationUrl);
+};
+
+const callbackGoogle = async (req, res) => {
+  const { code } = req.query;
+
+  const { tokens } = await oauth2Client.getToken(code);
+
+  oauth2Client.setCredentials(tokens);
+
+  const oath2 = google.oauth2({
+    auth: oauth2Client,
+    version: "v2",
+  });
+
+  const { data } = await oath2.userinfo.get();
+
+  const user = await Users.findOne({
+    where: {
+      email: data.email,
+    },
+  });
+
+  return res.json({ user, data });
+};
+
 module.exports = {
   Register,
   Login,
   getUsers,
+  authGoogle,
+  callbackGoogle,
 };

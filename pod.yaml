@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aplikasi-nginx
+  labels:
+    name: aplikasi-nginx
+    stack: nodejs
+    version: 2.1.1
+spec:
+  containers:
+  - name: aplikasi-nginx
+    image: nginx:alpine
+    resources:
+      limits:
+        memory: "10Mi"
+        cpu: "10m"
+    ports:
+      - containerPort: 80
