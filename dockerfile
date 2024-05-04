@@ -2,8 +2,9 @@ FROM node:16
 
 WORKDIR /app
 
-COPY package* .
-RUN npm i
+COPY package* ./
+RUN npm install
 
-COPY . .
+COPY . /app/
+
 CMD [ "npm", "run", "start" ]
